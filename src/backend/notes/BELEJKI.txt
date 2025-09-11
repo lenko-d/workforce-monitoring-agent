@@ -1,0 +1,55 @@
+user@AX370-Gaming-5:~/work/LLM_workforce_monitoring_and_insider_risk_management_agent_linux_C_plus_plus$ /opt/workforce-agent/bin/workforce_agent 
+Workforce Monitoring Agent starting...
+LLM analysis disabled. Set LLM_PROVIDER and API keys to enable.
+Example: export LLM_PROVIDER=openai
+         export OPENAI_API_KEY=your-key-here
+Upgrade status: 1 - Checking for updates...
+BCC not available, using fallback network monitoring
+Monitoring started. Press Ctrl+C to stop.
+Upgrade progress: 100% - Downloading update...
+Upgrade progress: 100% - Downloading update...
+Upgrade progress: 100% - Downloading update...
+Upgrade progress: 100% - Downloading update...
+Upgrade status: 0 - No updates available - current version 1.0.0-dev is up to date
+Data sent successfully to backend
+Data sent successfully to backend
+
+
+
+
+
+
+
+user@AX370-Gaming-5:~/work/LLM_workforce_monitoring_and_insider_risk_management_agent_linux_C_plus_plus/src/backend$ python3 app.py 
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.50.180:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 107-157-891
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/activities HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/risk-analysis HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /socket.io/?EIO=4&transport=polling&t=Pai2omL HTTP/1.1" 200 -
+Client connected
+127.0.0.1 - - [08/Sep/2025 20:15:53] "POST /socket.io/?EIO=4&transport=polling&t=Pai2omR&sid=R8ub8TakE_DcL623AAAA HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /socket.io/?EIO=4&transport=polling&t=Pai2omS&sid=R8ub8TakE_DcL623AAAA HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/activities HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:53] "GET /api/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET /socket.io/?EIO=4&transport=polling&t=Pai2pmH HTTP/1.1" 200 -
+Client connected
+127.0.0.1 - - [08/Sep/2025 20:15:57] "POST /socket.io/?EIO=4&transport=polling&t=Pai2pma&sid=cHL16V24kw7BCEVzAAAC HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET /socket.io/?EIO=4&transport=polling&t=Pai2pmb&sid=cHL16V24kw7BCEVzAAAC HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET /api/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET /api/activities HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:57] "GET /api/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:15:58] "GET /api/risk-analysis HTTP/1.1" 200 -
+127.0.0.1 - - [08/Sep/2025 20:16:10] "POST /agent_data HTTP/1.1" 200 -
+Error processing agent data: 400 Bad Request: Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)

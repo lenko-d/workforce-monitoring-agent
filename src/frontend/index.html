@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .alert-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .productivity-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .risk-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .alert-item {
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+        .alert-high {
+            border-left-color: #dc3545;
+        }
+        .alert-medium {
+            border-left-color: #ffc107;
+        }
+        .alert-low {
+            border-left-color: #28a745;
+        }
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        .activity-item:hover {
+            background-color: #f8f9fa;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Workforce Monitoring System
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="status-indicator status-offline" id="connectionStatus"></span>
+                <span id="connectionText">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Metrics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h3 id="totalUsers">0</h3>
+                        <p class="mb-0">Total Users</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card alert-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h3 id="totalAlerts">0</h3>
+                        <p class="mb-0">Active Alerts</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card productivity-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                        <h3 id="productivityScore">0%</h3>
+                        <p class="mb-0">Avg Productivity</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card risk-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                        <h3 id="riskScore">0%</h3>
+                        <p class="mb-0">Risk Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Risk Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Activity Trends</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Usage and Alerts/Activities -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Application Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="appUsageList">
+                            <p class="text-muted text-center">No application usage data</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Recent Alerts</h5>
+                        <span class="badge bg-danger" id="alertCount">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertsList">
+                            <p class="text-muted text-center">No recent alerts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Activities</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-list" id="activitiesList">
+                            <p class="text-muted text-center">No recent activities</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let riskChart;
+        let activityChart;
+        let alerts = [];
+        let activities = [];
+
+        // Initialize Socket.IO connection
+        function initSocket() {
+            socket = io('http://localhost:5000');
+
+            socket.on('connect', function() {
+                document.getElementById('connectionStatus').className = 'status-indicator status-online';
+                document.getElementById('connectionText').textContent = 'Connected';
+                console.log('Connected to server');
+                loadDashboardData();
+                loadActivitiesData();
+                loadActivityTrendsData();
+                loadProductivityData();
+                loadApplicationUsage();
+                loadAlerts();
+            });
+
+            socket.on('disconnect', function() {
+                document.getElementById('connectionStatus').className = 'status-indicator status-offline';
+                document.getElementById('connectionText').textContent = 'Disconnected';
+                console.log('Disconnected from server');
+            });
+
+            socket.on('data_update', function(data) {
+                handleDataUpdate(data);
+            });
+
+            socket.on('alert', function(alert) {
+                handleNewAlert(alert);
+            });
+
+            socket.on('status', function(data) {
+                console.log('Status:', data.message);
+            });
+        }
+
+        // Load initial dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Load existing alerts
+        async function loadAlerts() {
+            try {
+                const response = await fetch('/api/alerts?limit=10');
+                const alertsData = await response.json();
+                console.log('Loaded existing alerts:', alertsData);
+                // Add existing alerts to the alerts array
+                alertsData.forEach(alert => {
+                    if (!alert.id) {
+                        alert.id = Date.now() + Math.random();
+                    }
+                    // Only add if not already in the array
+                    if (!alerts.find(a => a.id === alert.id)) {
+                        alerts.unshift(alert);
+                    }
+                });
+                if (alerts.length > 10) {
+                    alerts = alerts.slice(0, 10);
+                }
+                updateAlertsDisplay();
+                updateAlertCount();
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        // Load activities data
+        async function loadActivitiesData() {
+            try {
+                const response = await fetch('/api/activities');
+                const data = await response.json();
+                // Clear existing activities and load from API
+                activities = data;
+                updateActivitiesDisplay();
+            } catch (error) {
+                console.error('Error loading activities data:', error);
+            }
+        }
+
+        // Update dashboard metrics
+        function updateDashboard(data) {
+            document.getElementById('totalUsers').textContent = data.total_users;
+            document.getElementById('totalAlerts').textContent = data.total_alerts;
+            document.getElementById('productivityScore').textContent = Math.round(data.productivity_score * 100) + '%';
+            document.getElementById('riskScore').textContent = Math.round(data.risk_score * 100) + '%';
+        }
+
+        // Handle real-time data updates
+        function handleDataUpdate(data) {
+            if (data.type === 'activity') {
+                addActivity(data.data);
+            }
+            // Refresh dashboard data periodically
+            if (Math.random() < 0.1) { // 10% chance to refresh
+                loadDashboardData();
+            }
+        }
+
+        // Handle new alerts
+        function handleNewAlert(alert) {
+            console.log('Received alert:', alert);
+            // Ensure alert has an ID
+            if (!alert.id) {
+                alert.id = Date.now();
+            }
+            alerts.unshift(alert);
+            if (alerts.length > 10) {
+                alerts.pop();
+            }
+            updateAlertsDisplay();
+            updateAlertCount();
+
+            // Visual feedback for new alert
+            const alertCard = document.querySelector('.alert-card');
+            alertCard.classList.add('pulse');
+            setTimeout(() => alertCard.classList.remove('pulse'), 3000);
+        }
+
+        // Add new activity
+        function addActivity(activity) {
+            activities.unshift(activity);
+            if (activities.length > 50) {
+                activities.pop();
+            }
+            updateActivitiesDisplay();
+        }
+
+        // Update alerts display
+        function updateAlertsDisplay() {
+            const alertsList = document.getElementById('alertsList');
+
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<p class="text-muted text-center">No recent alerts</p>';
+                return;
+            }
+
+            alertsList.innerHTML = alerts.map(alert => `
+                <div class="alert-item alert-${alert.severity}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${alert.title}</strong>
+                            <p class="mb-1">${alert.description}</p>
+                            <small class="text-muted">${new Date(alert.timestamp).toLocaleString()}</small>
+                        </div>
+                        <span class="badge bg-${alert.severity === 'high' ? 'danger' : alert.severity === 'medium' ? 'warning' : 'success'}">${alert.severity}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update activities display
+        function updateActivitiesDisplay() {
+            const activitiesList = document.getElementById('activitiesList');
+
+            if (activities.length === 0) {
+                activitiesList.innerHTML = '<p class="text-muted text-center">No recent activities</p>';
+                return;
+            }
+
+            activitiesList.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${activity.type}</strong>
+                            <p class="mb-0 text-muted">${activity.details || 'No details'}</p>
+                        </div>
+                        <small class="text-muted">${new Date(activity.timestamp).toLocaleString()}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update alert count
+        function updateAlertCount() {
+            document.getElementById('alertCount').textContent = alerts.length;
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Risk distribution chart
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            riskChart = new Chart(riskCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [60, 30, 10],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Activity trends chart (will be populated with real data)
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Activities',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load risk analysis data
+        async function loadRiskData() {
+            try {
+                const response = await fetch('/api/risk-analysis');
+                const data = await response.json();
+
+                // Update risk chart
+                riskChart.data.datasets[0].data = [
+                    data.risk_distribution.low,
+                    data.risk_distribution.medium,
+                    data.risk_distribution.high
+                ];
+                riskChart.update();
+
+            } catch (error) {
+                console.error('Error loading risk data:', error);
+            }
+        }
+
+        // Load activity trends data
+        async function loadActivityTrendsData() {
+            try {
+                const response = await fetch('/api/activity-trends');
+                const data = await response.json();
+
+                // Update activity trends chart with real data
+                if (data.labels && data.data) {
+                    activityChart.data.labels = data.labels;
+                    activityChart.data.datasets[0].data = data.data;
+                    activityChart.update();
+                    console.log('Activity trends updated:', data);
+                }
+
+            } catch (error) {
+                console.error('Error loading activity trends data:', error);
+            }
+        }
+
+        // Load productivity data
+        async function loadProductivityData() {
+            try {
+                const response = await fetch('/api/productivity');
+                const data = await response.json();
+
+                // Update activity trends chart with real productivity data
+                if (data.entries_count > 0) {
+                    // Calculate productivity trend over time (simplified example)
+                    const productivityTrend = Math.round(data.average_score * 100);
+                    console.log('Productivity data:', data);
+                    console.log('Current productivity score:', productivityTrend + '%');
+
+                    // Could update activity chart with productivity metrics
+                    // For now, we log the data - this could be enhanced to show
+                    // productivity trends over time
+                }
+
+            } catch (error) {
+                console.error('Error loading productivity data:', error);
+            }
+        }
+
+        // Load application usage data
+        async function loadApplicationUsage() {
+            try {
+                const response = await fetch('/api/application-usage?limit=10');
+                const data = await response.json();
+                updateApplicationUsageDisplay(data.application_usage);
+            } catch (error) {
+                console.error('Error loading application usage data:', error);
+            }
+        }
+
+        // Update application usage display
+        function updateApplicationUsageDisplay(usageData) {
+            const appUsageList = document.getElementById('appUsageList');
+
+            if (!usageData || usageData.length === 0) {
+                appUsageList.innerHTML = '<p class="text-muted text-center">No application usage data</p>';
+                return;
+            }
+
+            appUsageList.innerHTML = usageData.map(app => `
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-${app.is_productive ? 'check-circle text-success' : 'exclamation-triangle text-warning'} me-2"></i>
+                        <div>
+                            <strong>${app.application}</strong>
+                            <br>
+                            <small class="text-muted">${app.is_productive ? 'Productive' : 'Non-productive'}</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <strong class="text-primary">${app.total_time_formatted}</strong>
+                        <br>
+                        <small class="text-muted">${app.total_time_seconds}s total</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            initSocket();
+
+            // Load risk data after a short delay
+            setTimeout(loadRiskData, 1000);
+
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                loadDashboardData();
+                loadRiskData();
+                loadActivitiesData();
+                loadActivityTrendsData();
+                loadProductivityData();
+                loadApplicationUsage();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

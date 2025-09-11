@@ -1,0 +1,7 @@
+{
+  "update_server_url": "https://api.example.com/updates",
+  "auto_update_interval": 60,
+  "backup_enabled": true,
+  "backup_directory": "/var/backups/workforce_agent",
+  "temp_directory": "/tmp/workforce_agent_updates"
+}
