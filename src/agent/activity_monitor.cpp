@@ -196,9 +196,17 @@ void ActivityMonitor::monitorWindowFocus() {
                 std::stringstream ss;
                 ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
 
-                std::string details = "Window focus changed - " + current_app_name;
-                if (!current_window_title.empty()) {
-                    details += " (" + current_window_title + ")";
+                std::string details;
+                if (!current_app_name.empty()) {
+                    details = "Window focus changed - " + current_app_name;
+                    if (!current_window_title.empty()) {
+                        details += " (" + current_window_title + ")";
+                    }
+                } else if (!current_window_title.empty()) {
+                    details = "Window focus changed - " + current_window_title;
+                } else {
+                    // Skip if both are empty (shouldn't happen due to the condition above, but safety check)
+                    return;
                 }
 
                 ActivityEvent event{
@@ -274,26 +282,39 @@ std::string ActivityMonitor::getActiveWindowTitle() {
     bool sway_available = (getenv("SWAYSOCK") != nullptr) &&
                          (system("swaymsg -t get_version >/dev/null 2>&1") == 0);
 
-    std::string command = "xdotool getactivewindow getwindowname 2>/dev/null || ";
+    // Try multiple detection methods in order of preference
+    std::vector<std::string> commands = {
+        "xdotool getactivewindow getwindowname 2>/dev/null",
+        "xprop -id $(xdotool getactivewindow) WM_NAME 2>/dev/null | cut -d'\"' -f2",
+        "wmctrl -l 2>/dev/null | grep -E '\\*' | cut -d' ' -f5-",
+    };
+
     if (sway_available) {
-        command += "swaymsg -t get_tree | jq -r '.. | select(.focused? == true).name' 2>/dev/null || ";
+        commands.insert(commands.begin(), "swaymsg -t get_tree | jq -r '.. | select(.focused? == true).name' 2>/dev/null");
     }
-    command += "echo 'Unknown'";
 
-    FILE* fp = popen(command.c_str(), "r");
-    if (!fp) return "";
-
-    char buffer[256];
-    std::string result = "";
-    if (fgets(buffer, sizeof(buffer), fp) != nullptr) {
-        result = buffer;
-        // Remove trailing newline
-        if (!result.empty() && result.back() == '\n') {
-            result.pop_back();
+    for (const auto& cmd : commands) {
+        FILE* fp = popen(cmd.c_str(), "r");
+        if (fp) {
+            char buffer[256];
+            std::string result = "";
+            if (fgets(buffer, sizeof(buffer), fp) != nullptr) {
+                result = buffer;
+                // Remove trailing newline
+                if (!result.empty() && result.back() == '\n') {
+                    result.pop_back();
+                }
+                // Clean up the result
+                if (!result.empty() && result != "null" && result != "N/A" && result.length() > 1) {
+                    pclose(fp);
+                    return result;
+                }
+            }
+            pclose(fp);
         }
     }
-    pclose(fp);
-    return result;
+
+    return "";  // Return empty string instead of "Unknown"
 }
 
 std::set<std::string> ActivityMonitor::getRunningApplications() {
@@ -331,29 +352,37 @@ std::string ActivityMonitor::getActiveApplication() {
     bool sway_available = (getenv("SWAYSOCK") != nullptr) &&
                          (system("swaymsg -t get_version >/dev/null 2>&1") == 0);
 
-    std::string command = "xdotool getactivewindow getwindowpid 2>/dev/null | "
-                         "xargs -I {} ps -p {} -o comm= 2>/dev/null || ";
+    // Try multiple detection methods in order of preference
+    std::vector<std::string> commands;
+
     if (sway_available) {
-        command += "swaymsg -t get_tree | jq -r '.. | select(.focused? == true).app_id' 2>/dev/null || ";
+        commands.push_back("swaymsg -t get_tree | jq -r '.. | select(.focused? == true).app_id' 2>/dev/null");
     }
-    command += "echo 'unknown'";
 
-    FILE* fp = popen(command.c_str(), "r");
-    if (!fp) return "unknown";
+    commands.push_back("xdotool getactivewindow getwindowpid 2>/dev/null | xargs -I {} ps -p {} -o comm= 2>/dev/null");
+    commands.push_back("xprop -id $(xdotool getactivewindow) WM_CLASS 2>/dev/null | grep -o '\"[^\"]*\"' | head -1 | tr -d '\"'");
+    commands.push_back("wmctrl -l 2>/dev/null | grep -E '\\*' | awk '{print $3}'");
 
-    char buffer[256];
-    std::string result = "unknown";
-    if (fgets(buffer, sizeof(buffer), fp) != nullptr) {
-        result = buffer;
-        // Remove trailing newline
-        if (!result.empty() && result.back() == '\n') {
-            result.pop_back();
-        }
-        // Clean up the result
-        if (result.empty() || result == "null") {
-            result = "unknown";
+    for (const auto& cmd : commands) {
+        FILE* fp = popen(cmd.c_str(), "r");
+        if (fp) {
+            char buffer[256];
+            std::string result = "";
+            if (fgets(buffer, sizeof(buffer), fp) != nullptr) {
+                result = buffer;
+                // Remove trailing newline
+                if (!result.empty() && result.back() == '\n') {
+                    result.pop_back();
+                }
+                // Clean up the result
+                if (!result.empty() && result != "null" && result != "N/A" && result.length() > 1) {
+                    pclose(fp);
+                    return result;
+                }
+            }
+            pclose(fp);
         }
     }
-    pclose(fp);
-    return result;
+
+    return "";  // Return empty string instead of "unknown"
 }
