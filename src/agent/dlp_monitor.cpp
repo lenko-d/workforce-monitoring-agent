@@ -127,6 +127,13 @@ void DLPMonitor::monitorFileSystem() {
 
                 std::cout << "File event: " << full_file_path << " (mask: " << event->mask << ")" << std::endl;
 
+                // Skip temporary files and directories
+                if (full_file_path.find("/tmp/") == 0 || full_file_path == "/tmp" ||
+                    full_file_path.find("/var/tmp/") == 0 || full_file_path == "/var/tmp" ||
+                    full_file_path.find("/dev/shm/") == 0 || full_file_path == "/dev/shm") {
+                    continue;
+                }
+
                 // Check if this file violates any policies
                 if (checkFileAgainstPolicies(full_file_path)) {
                     if (callback_) {
