@@ -393,9 +393,10 @@
         function updateActivitiesDisplay() {
             const activitiesList = document.getElementById('activitiesList');
 
-            // Filter out unwanted activities
+            // Filter out system activities that aren't user-relevant
             const filteredActivities = activities.filter(activity =>
-                activity.type !== 'activity' && activity.details !== 'Application monitoring active'
+                !activity.details?.includes('kworker/') &&
+                activity.activity_type !== 'application'
             );
 
             if (filteredActivities.length === 0) {
@@ -403,11 +404,11 @@
                 return;
             }
 
-            activitiesList.innerHTML = filteredActivities.map(activity => `
+            activitiesList.innerHTML = filteredActivities.slice(0, 20).map(activity => `
                 <div class="activity-item">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <strong>${activity.type}</strong>
+                            <strong>${activity.activity_type || activity.type}</strong>
                             <p class="mb-0 text-muted">${activity.details || 'No details'}</p>
                         </div>
                         <small class="text-muted">${new Date(activity.timestamp).toLocaleString()}</small>
