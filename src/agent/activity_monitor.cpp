@@ -314,7 +314,7 @@ std::string ActivityMonitor::getActiveWindowTitle() {
         }
     }
 
-    return "";  // Return empty string instead of "Unknown"
+    return "Unknown";  // Return "Unknown" when detection fails
 }
 
 std::set<std::string> ActivityMonitor::getRunningApplications() {
@@ -384,5 +384,5 @@ std::string ActivityMonitor::getActiveApplication() {
         }
     }
 
-    return "";  // Return empty string instead of "unknown"
+    return "unknown";  // Return "unknown" when detection fails
 }
