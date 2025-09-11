@@ -39,7 +39,7 @@
             color: white;
         }
         .risk-card {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            background: linear-gradient(135deg, #2d5a3d 0%, #1e3a2e 100%);
             color: white;
         }
         .chart-container {
@@ -393,12 +393,17 @@
         function updateActivitiesDisplay() {
             const activitiesList = document.getElementById('activitiesList');
 
-            if (activities.length === 0) {
+            // Filter out unwanted activities
+            const filteredActivities = activities.filter(activity =>
+                activity.type !== 'activity' && activity.details !== 'Application monitoring active'
+            );
+
+            if (filteredActivities.length === 0) {
                 activitiesList.innerHTML = '<p class="text-muted text-center">No recent activities</p>';
                 return;
             }
 
-            activitiesList.innerHTML = activities.map(activity => `
+            activitiesList.innerHTML = filteredActivities.map(activity => `
                 <div class="activity-item">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>

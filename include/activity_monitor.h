@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <thread>
 #include <atomic>
 #include <functional>
@@ -30,6 +31,7 @@ private:
     void monitorApplications();
     std::string getActiveWindowTitle();
     std::string getActiveApplication();
+    std::set<std::string> getRunningApplications();
 
     std::thread keyboard_thread_;
     std::thread mouse_thread_;

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <set>
 #include <wayland-client.h>
 #include <libevdev-1.0/libevdev/libevdev.h>
 #include <fcntl.h>
@@ -215,24 +216,53 @@ void ActivityMonitor::monitorWindowFocus() {
 }
 
 void ActivityMonitor::monitorApplications() {
-    while (running_) {
-        // Monitor running applications using system commands
-        // This is a simplified implementation
-        if (callback_) {
-            auto now = std::chrono::system_clock::now();
-            auto time_t = std::chrono::system_clock::to_time_t(now);
-            std::stringstream ss;
-            ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+    std::set<std::string> previous_applications;
 
-            ActivityEvent event{
-                ss.str(),
-                "application",
-                "Application monitoring active",
-                "current_user"
-            };
-            callback_(event);
+    while (running_) {
+        std::set<std::string> current_applications = getRunningApplications();
+
+        // Find newly started applications
+        for (const auto& app : current_applications) {
+            if (previous_applications.find(app) == previous_applications.end()) {
+                if (callback_) {
+                    auto now = std::chrono::system_clock::now();
+                    auto time_t = std::chrono::system_clock::to_time_t(now);
+                    std::stringstream ss;
+                    ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+
+                    ActivityEvent event{
+                        ss.str(),
+                        "application",
+                        "Application started: " + app,
+                        "current_user"
+                    };
+                    callback_(event);
+                }
+            }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(30));
+
+        // Find applications that have stopped
+        for (const auto& app : previous_applications) {
+            if (current_applications.find(app) == current_applications.end()) {
+                if (callback_) {
+                    auto now = std::chrono::system_clock::now();
+                    auto time_t = std::chrono::system_clock::to_time_t(now);
+                    std::stringstream ss;
+                    ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+
+                    ActivityEvent event{
+                        ss.str(),
+                        "application",
+                        "Application stopped: " + app,
+                        "current_user"
+                    };
+                    callback_(event);
+                }
+            }
+        }
+
+        previous_applications = current_applications;
+        std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 }
 
@@ -264,6 +294,33 @@ std::string ActivityMonitor::getActiveWindowTitle() {
     }
     pclose(fp);
     return result;
+}
+
+std::set<std::string> ActivityMonitor::getRunningApplications() {
+    std::set<std::string> applications;
+
+    // Use ps command to get running processes
+    // Filter out system processes and get unique application names
+    std::string command = "ps -eo comm --no-headers | grep -v -E '^(ps|grep|bash|sh|systemd|init|kthreadd|kworker|migration|idle_inject|cpuhp|watchdog|ksoftirqd|rcu_|ktimersoftd|netns| khungtaskd|writeback|ksmd|khugepaged|crypto|kintegrityd|kblockd|ata_sff|md|edac|devfreq|watchdog|kswapd|ecryptfs|cryptd)$' | sort | uniq";
+
+    FILE* fp = popen(command.c_str(), "r");
+    if (!fp) return applications;
+
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), fp) != nullptr) {
+        std::string app_name = buffer;
+        // Remove trailing newline
+        if (!app_name.empty() && app_name.back() == '\n') {
+            app_name.pop_back();
+        }
+        // Skip empty lines and system processes
+        if (!app_name.empty() && app_name.length() > 2) {
+            applications.insert(app_name);
+        }
+    }
+
+    pclose(fp);
+    return applications;
 }
 
 std::string ActivityMonitor::getActiveApplication() {

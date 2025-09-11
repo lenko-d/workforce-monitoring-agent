@@ -125,7 +125,7 @@ void DLPMonitor::monitorFileSystem() {
                     full_file_path = watch_path + "/" + event->name;
                 }
 
-                std::cout << "File event: " << full_file_path << " (mask: " << event->mask << ")" << std::endl;
+                //std::cout << "File event: " << full_file_path << " (mask: " << event->mask << ")" << std::endl;
 
                 // Skip temporary files and directories
                 if (full_file_path.find("/tmp/") == 0 || full_file_path == "/tmp" ||
