@@ -9,7 +9,6 @@ A comprehensive system for monitoring employee productivity, ensuring compliance
 - **Data Loss Prevention (DLP)**: Prevents unauthorized transfer of sensitive data
   - File system monitoring with inotify
   - Network transfer monitoring with eBPF
-  - Automatic exclusion of temporary directories (/tmp/, /var/tmp/, /dev/shm/)
 - **Time Tracking**: Application usage and productivity analysis
 - **Behavior Analytics**: AI-driven anomaly detection and risk assessment
 - **LLM-Powered Behavioral Analysis**: Advanced AI analysis using OpenAI GPT-4 or Anthropic Claude
