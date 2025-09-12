@@ -57,7 +57,7 @@ dev-setup:
 # Quick build and run (for development)
 dev-run: build
 	@echo "Starting agent in development mode..."
-	@./build/workforce_agent
+	@./build/wm-agent
 
 # Show help
 help:

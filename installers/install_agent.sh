@@ -13,13 +13,13 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="/opt/workforce-agent"
-CONFIG_DIR="/etc/workforce-agent"
-LOG_DIR="/var/log/workforce-agent"
-BACKUP_DIR="/var/backups/workforce-agent"
-TEMP_DIR="/tmp/workforce-agent-install"
-SERVICE_NAME="workforce-agent"
-USER_NAME="workforce-agent"
+INSTALL_DIR="/opt/wm-agent"
+CONFIG_DIR="/etc/wm-agent"
+LOG_DIR="/var/log/wm-agent"
+BACKUP_DIR="/var/backups/wm-agent"
+TEMP_DIR="/tmp/wm-agent-install"
+SERVICE_NAME="wm-agent"
+USER_NAME="wm-agent"
 
 # Functions
 print_header() {
@@ -158,7 +158,7 @@ create_directories() {
     # Check if /opt is writable, if not use alternative location
     if ! mkdir -p "$INSTALL_DIR" 2>/dev/null; then
         print_warning "/opt is read-only, using /usr/local as alternative installation directory"
-        INSTALL_DIR="/usr/local/workforce-agent"
+        INSTALL_DIR="/usr/local/wm-agent"
         mkdir -p "$INSTALL_DIR" || {
             print_error "Failed to create installation directory in /usr/local either"
             exit 1
@@ -168,7 +168,7 @@ create_directories() {
     # Check if /etc is writable
     if ! mkdir -p "$CONFIG_DIR" 2>/dev/null; then
         print_warning "/etc is read-only, using /usr/local/etc as alternative config directory"
-        CONFIG_DIR="/usr/local/etc/workforce-agent"
+        CONFIG_DIR="/usr/local/etc/wm-agent"
         mkdir -p "$CONFIG_DIR" || {
             print_error "Failed to create config directory in /usr/local/etc either"
             exit 1
@@ -178,7 +178,7 @@ create_directories() {
     # Check if /var/log is writable
     if ! mkdir -p "$LOG_DIR" 2>/dev/null; then
         print_warning "/var/log is read-only, using /usr/local/var/log as alternative log directory"
-        LOG_DIR="/usr/local/var/log/workforce-agent"
+        LOG_DIR="/usr/local/var/log/wm-agent"
         mkdir -p "$LOG_DIR" || {
             print_error "Failed to create log directory in /usr/local/var/log either"
             exit 1
@@ -188,7 +188,7 @@ create_directories() {
     # Check if /var/backups is writable
     if ! mkdir -p "$BACKUP_DIR" 2>/dev/null; then
         print_warning "/var/backups is read-only, using /usr/local/var/backups as alternative backup directory"
-        BACKUP_DIR="/usr/local/var/backups/workforce-agent"
+        BACKUP_DIR="/usr/local/var/backups/wm-agent"
         mkdir -p "$BACKUP_DIR" || {
             print_error "Failed to create backup directory in /usr/local/var/backups either"
             exit 1
@@ -353,7 +353,7 @@ setup_configuration() {
     cat > "$CONFIG_DIR/agent_config.json" << EOF
 {
   "agent": {
-    "name": "workforce-agent",
+    "name": "wm-agent",
     "version": "1.0.0",
     "log_level": "info",
     "log_file": "$LOG_DIR/agent.log"
@@ -404,7 +404,7 @@ Wants=network.target
 Type=simple
 User=$USER_NAME
 Group=$USER_NAME
-ExecStart=$INSTALL_DIR/bin/workforce_agent
+ExecStart=$INSTALL_DIR/bin/wm-agent
 Restart=always
 RestartSec=5
 Environment=HOME=$INSTALL_DIR
@@ -434,7 +434,7 @@ EOF
     else
         print_warning "Systemd not available or /etc read-only, skipping service creation"
         print_warning "You can manually create the service or run the agent directly:"
-        print_warning "  $INSTALL_DIR/bin/workforce_agent"
+        print_warning "  $INSTALL_DIR/bin/wm-agent"
     fi
 }
 
@@ -481,7 +481,7 @@ start_service() {
         fi
     else
         print_warning "Systemd not available, cannot start service automatically"
-        print_warning "You can run the agent manually: $INSTALL_DIR/bin/workforce_agent"
+        print_warning "You can run the agent manually: $INSTALL_DIR/bin/wm-agent"
     fi
 }
 
@@ -492,12 +492,12 @@ create_uninstaller() {
 #!/bin/bash
 set -e
 
-SERVICE_NAME="workforce-agent"
+SERVICE_NAME="wm-agent"
 INSTALL_DIR="$INSTALL_DIR"
 CONFIG_DIR="$CONFIG_DIR"
 LOG_DIR="$LOG_DIR"
 BACKUP_DIR="$BACKUP_DIR"
-USER_NAME="workforce-agent"
+USER_NAME="wm-agent"
 
 echo "Stopping and disabling service..."
 systemctl stop "\$SERVICE_NAME" 2>/dev/null || true

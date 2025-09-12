@@ -57,10 +57,10 @@ set(SOURCES
 )
 
 # Create executable
-add_executable(workforce_agent ${SOURCES})
+add_executable(wm-agent ${SOURCES})
 
 # Link libraries
-target_link_libraries(workforce_agent
+target_link_libraries(wm-agent
     ${LIBEVDEV_LIBRARIES}
     ${WAYLAND_CLIENT_LIBRARIES}
     ${WAYLAND_PROTOCOLS_LIBRARIES}
@@ -72,4 +72,4 @@ target_link_libraries(workforce_agent
 )
 
 # Install target
-install(TARGETS workforce_agent DESTINATION bin)
+install(TARGETS wm-agent DESTINATION bin)
