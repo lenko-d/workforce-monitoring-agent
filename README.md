@@ -11,7 +11,7 @@ A comprehensive system for monitoring employee productivity, ensuring compliance
   - Network transfer monitoring with eBPF
 - **Time Tracking**: Application usage and productivity analysis
 - **Behavior Analytics**: AI-driven anomaly detection and risk assessment
-- **LLM-Powered Behavioral Analysis**: AI analysis using OpenAI or Anthropic Claude
+- **LLM-Powered Behavioral Analysis**: AI analysis using OpenAI ChatGPT or Anthropic Claude
   - Real-time behavioral pattern analysis
   - Intelligent risk assessment and anomaly detection
   - Automated security recommendations
