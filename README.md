@@ -17,12 +17,6 @@ A comprehensive system for monitoring employee productivity, ensuring compliance
   - Automated security recommendations
   - Contextual threat analysis
 
-### Backend Features
-- **Real-time Data Processing**: Flask-SocketIO for live data streaming
-- **Machine Learning**: Isolation Forest and Autoencoder for anomaly detection
-- **RESTful API**: Comprehensive endpoints for data access
-- **Data Persistence**: In-memory storage with cleanup mechanisms
-- **Robust Timestamp Parsing**: Handles various timestamp formats and data types gracefully
 
 ### Frontend Dashboard
 - **Real-time Visualization**: Live charts and metrics updates
